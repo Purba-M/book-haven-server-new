@@ -2,13 +2,21 @@ const express=require('express')
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const admin = require("firebase-admin");
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+let serviceAccount;
 
-serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+try {
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  if (serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  }
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  console.log("✅ Firebase initialized successfully");
+} catch (err) {
+  console.error("❌ Firebase initialization failed:", err.message);
+}
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
 
 
 
