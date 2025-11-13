@@ -1,16 +1,27 @@
-const express=require('express')
+require('dotenv').config(); // ✅ Load env variables first
+
+const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+
+
+
+
 const admin = require("firebase-admin");
+
 let serviceAccount;
 
 try {
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  // decode Base64 → JSON
+  const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf-8');
+  serviceAccount = JSON.parse(decoded);
+
   if (serviceAccount.private_key) {
     serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
   }
+
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount),
   });
   console.log("✅ Firebase initialized successfully");
 } catch (err) {
@@ -20,7 +31,8 @@ try {
 
 
 
-require('dotenv').config()
+
+
 const { MongoClient, ServerApiVersion,ObjectId } = require('mongodb');
 const app=express()
 const port=process.env.PORT || 5000;
