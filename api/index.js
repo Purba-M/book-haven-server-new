@@ -183,6 +183,5 @@ app.get("/my-books", async (req, res) => {
 }
 run().catch(console.dir);
 
-app.listen(port,(req,res)=>{
-    console.log(`Server is running on ${port}`)
-})
+module.exports = app;
+
