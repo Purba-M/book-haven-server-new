@@ -1,18 +1,12 @@
-require('dotenv').config(); // ✅ Load env variables first
-
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-
-
-
-
 const admin = require("firebase-admin");
 
 let serviceAccount;
 
 try {
-  // decode Base64 → JSON
   const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf-8');
   serviceAccount = JSON.parse(decoded);
 
@@ -23,16 +17,10 @@ try {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
-  console.log("✅ Firebase initialized successfully");
+  console.log("Firebase initialized successfully");
 } catch (err) {
-  console.error("❌ Firebase initialization failed:", err.message);
+  console.error("Firebase initialization failed:", err.message);
 }
-
-
-
-
-
-
 const { MongoClient, ServerApiVersion,ObjectId } = require('mongodb');
 const app=express()
 const port=process.env.PORT || 5000;
@@ -81,13 +69,13 @@ async function run() {
     const db = client.db('bookHavenDB');
     const booksCollection = db.collection('books');
     const usersCollection = db.collection('users');
+    const commentsCollection = db.collection('comments');
+
 
     // Send a ping to confirm a successful connection
     
-    
-      
     //add new book
-   app.post('/add-book',async(req,res)=>{
+    app.post('/add-book',async(req,res)=>{
     const newbook = { ...req.body, createdAt: new Date() };
     const result = await booksCollection.insertOne(newbook);
     res.send(result);
@@ -95,7 +83,7 @@ async function run() {
    })
 
  
-app.get('/latest-books', async (req,res) => {
+app.get('/latest-books', async(req,res) => {
   const books = await booksCollection
     .find()
     .sort({ _id:1}).limit(6).toArray();
@@ -103,7 +91,7 @@ app.get('/latest-books', async (req,res) => {
 });
 
 
-   app.get('/all-books', async (req,res)=>{
+app.get('/all-books', async (req,res)=>{
   const books = await booksCollection.find().toArray();
   res.send(books);
 });
@@ -167,6 +155,26 @@ app.delete('/delete-book/:id', async (req,res)=>{
   const result = await booksCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
 });
+
+
+// Add comment
+app.get("/comments/:bookId", async (req, res) => {
+  const bookId = req.params.bookId;
+  const result = await commentsCollection.find({ bookId }).toArray();
+  res.send(result);
+});
+
+// Add a new comment
+app.post("/add-comment", async (req, res) => {
+  const comment = req.body;
+  comment.createdAt = new Date();
+  const result = await commentsCollection.insertOne(comment);
+
+  // return the comment with _id so UI can append
+  res.send({ _id: result.insertedId, ...comment });
+});
+
+
 
 app.get("/my-books", async (req, res) => {
   try {
