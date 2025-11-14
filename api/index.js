@@ -77,7 +77,7 @@ app.get('/',(req,res)=>{
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const db = client.db('bookHavenDB');
     const booksCollection = db.collection('books');
     const usersCollection = db.collection('users');
