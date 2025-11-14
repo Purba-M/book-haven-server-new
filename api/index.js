@@ -75,7 +75,7 @@ async function run() {
     // Send a ping to confirm a successful connection
     
     //add new book
-    app.post('/add-book',async(req,res)=>{
+    app.post('/add-book',verifyJWT,async(req,res)=>{
     const newbook = { ...req.body, createdAt: new Date() };
     const result = await booksCollection.insertOne(newbook);
     res.send(result);
@@ -91,7 +91,7 @@ app.get('/latest-books', async(req,res) => {
 });
 
 
-app.get('/all-books', async (req,res)=>{
+app.get('/all-books',async (req,res)=>{
   const books = await booksCollection.find().toArray();
   res.send(books);
 });
@@ -119,7 +119,7 @@ app.get('/book/:id', async (req, res) => {
 
 
 
-app.put('/update-book/:id', async (req, res) => {
+app.put('/update-book/:id', verifyJWT,async (req, res) => {
   const id = req.params.id.trim();
   const updateData = req.body;
 
@@ -129,7 +129,7 @@ app.put('/update-book/:id', async (req, res) => {
       return res.status(400).json({ message: "Invalid book ID" });
     }
 
-    delete updateData._id; // prevent overwriting _id
+    delete updateData._id; 
 
     const result = await booksCollection.updateOne(
       { _id: new ObjectId(id) },
@@ -157,26 +157,39 @@ app.delete('/delete-book/:id', async (req,res)=>{
 });
 
 
-// Add comment
-app.get("/comments/:bookId", async (req, res) => {
-  const bookId = req.params.bookId;
-  const result = await commentsCollection.find({ bookId }).toArray();
-  res.send(result);
-});
 
-// Add a new comment
-app.post("/add-comment", async (req, res) => {
-  const comment = req.body;
-  comment.createdAt = new Date();
-  const result = await commentsCollection.insertOne(comment);
+  app.post("/add-comment", async (req, res) => {
+      const { bookId, userName, userPhoto, comment, date } = req.body;
 
-  // return the comment with _id so UI can append
-  res.send({ _id: result.insertedId, ...comment });
-});
+      if (!bookId || !comment) {
+        return res.status(400).send({ message: "Missing fields" });
+      }
+
+      const newComment = {
+        bookId,
+        userName,
+        userPhoto,
+        comment,
+        date,
+      };
+
+      const result = await commentsCollection.insertOne(newComment);
+      res.send({ _id: result.insertedId, ...newComment });
+    });
+
+    app.get("/comments/:bookId", async (req, res) => {
+      const bookId = req.params.bookId;
+      const comments = await commentsCollection
+        .find({ bookId: bookId })
+        .sort({ date: -1 })
+        .toArray();
+
+      res.send(comments);
+    });
 
 
 
-app.get("/my-books", async (req, res) => {
+app.get("/my-books",verifyJWT,async (req, res) => {
   try {
     const email = req.query.email;
 
